@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import fileinput
+import os
+from pathlib import Path
+from collections import defaultdict
+
+sections = defaultdict(list)
+opened = {"all"}
+
+input = fileinput.input()
+lineno = 1;
+for line in input:
+    if line.startswith("// BEGIN "):
+        secname = line[9:-1]
+        opened.add(secname)
+    elif line.startswith("// END "):
+        secname = line[7:-1]
+        assert secname in opened, "No opened section "+secname
+        opened.remove(secname)
+    else:
+        for sec in opened:
+            sections[sec].append(line)
+
+filename = fileinput.filename()
+dirname, ext = os.path.splitext(filename)
+if not os.path.isdir(dirname):
+    os.mkdir(dirname)
+
+for secname, sec in sections.items():
+    print("Cutting: " +
+          str(dirname) + "/" + secname + ext +
+          " (%i lines)"%len(sec))
+    with open(os.path.join(dirname, secname+ext), 'w') as f:
+        for line in sec:
+            f.write(line)
+
